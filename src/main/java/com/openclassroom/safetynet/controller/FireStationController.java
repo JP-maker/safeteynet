@@ -1,6 +1,7 @@
 package com.openclassroom.safetynet.controller;
 
 import com.openclassroom.safetynet.dto.FireStationCoverageDTO;
+import com.openclassroom.safetynet.dto.PhoneAlertDTO;
 import com.openclassroom.safetynet.service.FireStationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,6 +52,39 @@ public class FireStationController {
                 })
                 .orElseGet(() -> {
                     logger.warn("Réponse 404 Not Found pour stationNumber={}", stationNumber);
+                    return ResponseEntity.notFound().build();
+                });
+    }
+
+    /**
+     * Endpoint pour obtenir les numéros de téléphone en donnant un numéro de station.
+     * URL: GET /phoneAlert?firestation=<firestation_number>
+     *
+     * @param fireStationNumber Le numéro de la station de pompier.
+     * @return ResponseEntity contenant le DTO PHoneAlertDTO ou une réponse 404.
+     */
+    @GetMapping("/phoneAlert")
+    public ResponseEntity<PhoneAlertDTO> getPhoneNumberByFireStation(
+            @RequestParam("firestation") int fireStationNumber) {
+
+        logger.info("Requête reçue pour /phoneAlert avec firestation={}", fireStationNumber);
+
+        if (fireStationNumber <= 0) {
+            logger.warn("Numéro de station invalide reçu: {}", fireStationNumber);
+            // Retourner Bad Request si le numéro n'est pas valide logiquement
+            return ResponseEntity.badRequest().build();
+        }
+
+        Optional<PhoneAlertDTO> result = fireStationService.getPhoneNumberByStation(fireStationNumber);
+
+        // Si le service retourne un résultat, renvoyer 200 OK avec les données
+        // Si le service retourne Optional.empty (station non trouvée), renvoyer 404 Not Found
+        return result.map(dto -> {
+                    logger.info("Réponse 200 OK pour firestation={}", fireStationNumber);
+                    return ResponseEntity.ok(dto);
+                })
+                .orElseGet(() -> {
+                    logger.warn("Réponse 404 Not Found pour firestation={}", fireStationNumber);
                     return ResponseEntity.notFound().build();
                 });
     }

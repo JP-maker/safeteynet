@@ -1,6 +1,7 @@
 package com.openclassroom.safetynet.repository;
 
 import com.openclassroom.safetynet.model.Person;
+import com.openclassroom.safetynet.utils.ConvertToUpper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Repository;
@@ -17,6 +18,7 @@ public class PersonRepository {
 
     private static final Logger logger = LoggerFactory.getLogger(PersonRepository.class);
     private List<Person> persons = new ArrayList<>();
+    private List<String> addressesUpper = new ArrayList<>();
 
     /**
      * Initialise ou met à jour les données des personnes.
@@ -41,8 +43,9 @@ public class PersonRepository {
         if (addresses == null || addresses.isEmpty()) {
             return Collections.emptyList(); // Retourne une liste vide immuable
         }
+        addressesUpper = ConvertToUpper.convertList(addresses);
         return persons.stream()
-                .filter(p -> addresses.contains(p.getAddress()))
+                .filter(p -> addressesUpper.contains(p.getAddress().toUpperCase()))
                 .collect(Collectors.toList());
     }
 

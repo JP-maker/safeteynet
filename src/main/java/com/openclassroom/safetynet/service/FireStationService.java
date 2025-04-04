@@ -3,6 +3,7 @@ package com.openclassroom.safetynet.service;
 import com.openclassroom.safetynet.constants.ConfigData;
 import com.openclassroom.safetynet.dto.FireStationCoverageDTO;
 import com.openclassroom.safetynet.dto.PersonInfoDTO;
+import com.openclassroom.safetynet.dto.PhoneAlertDTO;
 import com.openclassroom.safetynet.model.MedicalRecord;
 import com.openclassroom.safetynet.model.Person;
 import com.openclassroom.safetynet.repository.FireStationRepository;
@@ -96,6 +97,37 @@ public class FireStationService {
         FireStationCoverageDTO result = new FireStationCoverageDTO(personInfos, adultCount, childCount);
         logger.info("Résultat pour station {}: {} personnes, {} adultes, {} enfants",
                 stationNumber, personInfos.size(), adultCount, childCount);
+
+        return Optional.of(result);
+    }
+
+    public Optional<PhoneAlertDTO> getPhoneNumberByStation(int stationNumber) {
+        logger.debug("Recherche des téléphone pour la station numéro: {}", stationNumber);
+
+        // 1. Trouver toutes les adresses couvertes par cette station
+        List<String> addresses = fireStationRepository.findAddressesByStationNumber(stationNumber);
+
+        if (addresses.isEmpty()) {
+            logger.warn("Aucune adresse trouvée pour la station numéro: {}", stationNumber);
+            // Retourner un Optional vide si la station n'existe pas ou ne couvre aucune adresse
+            return Optional.empty();
+        }
+        logger.debug("Adresses trouvées pour la station {}: {}", stationNumber, addresses);
+
+        // 2. Trouver toutes les personnes vivant à ces adresses
+        List<Person> peopleAtAddresses = personRepository.findByAddressIn(addresses);
+        logger.debug("{} personnes trouvées aux adresses {}", peopleAtAddresses.size(), addresses);
+
+        List<String> phoneNumber = new ArrayList<>();
+
+        // 3. Pour chaque personne, récupérer le numéro de téléphone
+        for (Person person : peopleAtAddresses) {
+            phoneNumber.add(person.getPhone());
+        }
+
+        PhoneAlertDTO result = new PhoneAlertDTO(phoneNumber);
+        logger.info("Résultat pour station {}: {} numéros de téléphone",
+                stationNumber, phoneNumber.size());
 
         return Optional.of(result);
     }
