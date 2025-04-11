@@ -1,7 +1,6 @@
 package com.openclassroom.safetynet.controller;
 
-import com.openclassroom.safetynet.dto.ChildWithFamilyDTO;
-import com.openclassroom.safetynet.dto.FirePersonDTO;
+import com.openclassroom.safetynet.dto.*;
 import com.openclassroom.safetynet.service.PersonService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,6 +9,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 @RestController
@@ -84,6 +85,30 @@ public class PersonController {
                 })
                 .orElseGet(() -> {
                     logger.warn("getPersonWithMedicalReportByAddress - Réponse 404 Not Found pour adresse={}", address);
+                    return ResponseEntity.notFound().build();
+                });
+    }
+
+    /**
+     * Cette url doit retourner le nom, l'adresse, l'âge, l'adresse mail et les antécédents médicaux (médicaments, posologie et allergies) de chaque habitant. Si plusieurs personnes portent le même nom, elles doivent toutes apparaître
+     * URL: GET /personInfolastName?lastname=<lastName>
+     *
+     * @param lastname Le nom de la personne.
+     * @return ResponseEntity contenant le DTO PersonsWithMedicalReportDTO ou une réponse 404.
+     */
+    @GetMapping("/personInfolastName")
+    public ResponseEntity<ListOfPersonInfolastNameDTO> getPersonInfolastName(
+            @RequestParam("lastname") String lastName) {
+        logger.info("Requête reçue pour /personInfolastName avec lastname={}", lastName);
+
+
+        Optional<ListOfPersonInfolastNameDTO> result = null;
+        return result.map(dto -> {
+                    logger.info("getPersonWithMedicalReportByAddress - Réponse 200 OK pour le nom={}", lastName);
+                    return ResponseEntity.ok(dto);
+                })
+                .orElseGet(() -> {
+                    logger.warn("getPersonWithMedicalReportByAddress - Réponse 404 Not Found le nom={}", lastName);
                     return ResponseEntity.notFound().build();
                 });
     }
