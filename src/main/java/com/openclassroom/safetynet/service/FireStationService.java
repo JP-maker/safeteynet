@@ -1,9 +1,7 @@
 package com.openclassroom.safetynet.service;
 
 import com.openclassroom.safetynet.constants.ConfigData;
-import com.openclassroom.safetynet.dto.FireStationCoverageDTO;
-import com.openclassroom.safetynet.dto.PersonInfoDTO;
-import com.openclassroom.safetynet.dto.PhoneAlertDTO;
+import com.openclassroom.safetynet.dto.*;
 import com.openclassroom.safetynet.model.MedicalRecord;
 import com.openclassroom.safetynet.model.Person;
 import com.openclassroom.safetynet.repository.FireStationRepository;
@@ -18,6 +16,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import static java.lang.Integer.parseInt;
+
 @Service
 public class FireStationService {
 
@@ -27,12 +27,16 @@ public class FireStationService {
     private final PersonRepository personRepository;
     private final MedicalRecordRepository medicalRecordRepository;
 
+    private final PersonService personService;
+
     public FireStationService(FireStationRepository fireStationRepository,
                               PersonRepository personRepository,
-                              MedicalRecordRepository medicalRecordRepository) {
+                              MedicalRecordRepository medicalRecordRepository,
+                              PersonService personService) {
         this.fireStationRepository = fireStationRepository;
         this.personRepository = personRepository;
         this.medicalRecordRepository = medicalRecordRepository;
+        this.personService = personService;
     }
 
     public Optional<FireStationCoverageDTO> getPeopleCoveredByStation(int stationNumber) {
@@ -129,6 +133,51 @@ public class FireStationService {
         logger.info("Résultat pour station {}: {} numéros de téléphone",
                 stationNumber, phoneNumber.size());
 
+        return Optional.of(result);
+    }
+
+    public Optional<ListOfAddressWithListOfPersonWithMedicalRecordDTO> getListOfPersonsWithMedicalRecordsByListOfFireStation(List<String> stationNumbers) {
+
+        ListOfAddressWithListOfPersonWithMedicalRecordDTO result = new ListOfAddressWithListOfPersonWithMedicalRecordDTO();
+
+        List<FireStationAddressWithListOfPersonWithMedicalRecordDTO> fireStationAddressWithListOfPersonWithMedicalRecord = new ArrayList<>();
+
+        for (String stationNumber : stationNumbers) {
+
+            List<AddressWithListOfPersonWithMedicalRecordDTO> addressWithListOfPersonWithMedicalRecord = new ArrayList<>();
+            logger.debug("Recherche des adresses pour la station numéro: {}", stationNumber);
+            // 1. Trouver toutes les adresses couvertes par cette station
+            List<String> addresses = fireStationRepository.findAddressesByStationNumber(parseInt(stationNumber));
+
+            for (String address : addresses) {
+                logger.debug("Recherche des personnes pour l'adresse: {}", address);
+
+                // 2. Pour chaque adresse, récupérer les personnes avec leurs antécédents médicaux
+                Optional<FirePersonDTO> personInfos = personService.getPersonFireStationAndMedicalReportByAddress(address);
+                if (!personInfos.isEmpty()) {
+                    AddressWithListOfPersonWithMedicalRecordDTO personsForThisAddress = new AddressWithListOfPersonWithMedicalRecordDTO(address, personInfos.get().getPersons());
+                    addressWithListOfPersonWithMedicalRecord.add(personsForThisAddress);
+                } else {
+                    addressWithListOfPersonWithMedicalRecord = null;
+                }
+
+                logger.info("Résultat pour station {}: {} personnes",
+                        stationNumber, personInfos.get().getPersons().size());
+            }
+            // 3. Si aucune adresse n'est trouvée, ajouter une entrée vide
+            if (addressWithListOfPersonWithMedicalRecord.isEmpty()) {
+                logger.warn("Aucun résident trouvé pour la station {}", stationNumber);
+                fireStationAddressWithListOfPersonWithMedicalRecord.add(new FireStationAddressWithListOfPersonWithMedicalRecordDTO(stationNumber, null));
+            } else {
+                logger.info("Résultat pour la station {}: {} résidents",
+                        stationNumber, addressWithListOfPersonWithMedicalRecord.size());
+                fireStationAddressWithListOfPersonWithMedicalRecord.add(new FireStationAddressWithListOfPersonWithMedicalRecordDTO(stationNumber, addressWithListOfPersonWithMedicalRecord));
+            }
+
+        }
+        result.setFireStationAddressPersonMedicalRecords(fireStationAddressWithListOfPersonWithMedicalRecord);
+        logger.info("Résultat les stations {}: {}",
+                stationNumbers, result);
         return Optional.of(result);
     }
 }
