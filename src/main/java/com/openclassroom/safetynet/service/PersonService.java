@@ -157,4 +157,57 @@ public class PersonService {
             return Optional.of(result);
         }
     }
+
+    public Optional<ListOfPersonInfolastNameDTO> getPersonInfoByLastName(String lastName) {
+        logger.debug("Recherche des personnes et informations médicales pour le nom: {}", lastName);
+
+        // 1. Trouver toutes les personnes avec ce nom
+        List<Person> peopleWithLastName = personRepository.findByLastName(lastName);
+        logger.debug("{} personnes trouvées pour le nom {}", peopleWithLastName.size(), lastName);
+
+        List<PersonInfolastNameDTO> personsInfo = new ArrayList<>();
+
+        // 2. Pour chaque personne, on trouve le dossier médical et on calcule l'âge
+        for (Person person : peopleWithLastName) {
+
+            // 2.1 Trouver le dossier médical pour calculer l'âge
+            Optional<MedicalRecord> medicalRecordOpt = medicalRecordRepository.findByFirstNameAndLastName(
+                    person.getFirstName(), person.getLastName()
+            );
+            logger.debug("{} dossier médical trouvé", medicalRecordOpt.isPresent() ? 1 : 0);
+
+            if (medicalRecordOpt.isPresent()) {
+                MedicalRecord medicalRecord = medicalRecordOpt.get();
+                try {
+                    int age = AgeCalculator.calculateAge(medicalRecord.getBirthdate());
+
+                    personsInfo.add(new PersonInfolastNameDTO(
+                            person.getAddress(),
+                            age,
+                            person.getEmail(),
+                            medicalRecord.getMedications(),
+                            medicalRecord.getAllergies()
+                    ));
+                } catch (Exception e) {
+                    // Gérer les exceptions lors du calcul de l'âge
+                    logger.error("getPersonFireStationAndMedicalReportByAddress - Impossible de calculer l'âge pour {} {} (date: {}): {}",
+                            person.getFirstName(), person.getLastName(), medicalRecord.getBirthdate(), e.getMessage());
+                }
+            } else {
+                logger.warn("getPersonFireStationAndMedicalReportByAddress - Aucun dossier médical trouvé pour {} {}, impossible de déterminer l'âge.",
+                        person.getFirstName(), person.getLastName());
+                // Décidez comment compter cette personne (ex: adulte par défaut?)
+            }
+        }
+
+        ListOfPersonInfolastNameDTO result = new ListOfPersonInfolastNameDTO(lastName, personsInfo);
+        logger.info("Résultat pour le nom {}: {} résidents", lastName, personsInfo.size());
+
+        if (personsInfo.isEmpty()) {
+            logger.warn("Aucun résident trouvé pour le nom {}", lastName);
+            return Optional.empty();
+        } else {
+            return Optional.of(result);
+        }
+    }
 }

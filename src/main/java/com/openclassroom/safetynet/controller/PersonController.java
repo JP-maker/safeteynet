@@ -101,14 +101,13 @@ public class PersonController {
             @RequestParam("lastname") String lastName) {
         logger.info("Requête reçue pour /personInfolastName avec lastname={}", lastName);
 
-
-        Optional<ListOfPersonInfolastNameDTO> result = null;
+        Optional<ListOfPersonInfolastNameDTO> result = personService.getPersonInfoByLastName(lastName.toUpperCase());
         return result.map(dto -> {
-                    logger.info("getPersonWithMedicalReportByAddress - Réponse 200 OK pour le nom={}", lastName);
+                    logger.info("getPersonInfolastName - Réponse 200 OK pour le nom={}", lastName);
                     return ResponseEntity.ok(dto);
                 })
                 .orElseGet(() -> {
-                    logger.warn("getPersonWithMedicalReportByAddress - Réponse 404 Not Found le nom={}", lastName);
+                    logger.warn("getPersonInfolastName - Réponse 404 Not Found le nom={}", lastName);
                     return ResponseEntity.notFound().build();
                 });
     }

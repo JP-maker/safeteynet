@@ -80,5 +80,14 @@ public class PersonRepository {
         return new ArrayList<>(persons);
     }
 
-    // Ajoutez d'autres méthodes si nécessaire (save, delete, update...)
+    /**
+     * Trouve des personnes par nom.
+     * @param lastName Nom.
+     * @return Un Optional contenant la personne si trouvée, sinon Optional vide.
+     */
+    public List<Person> findByLastName(String lastName) {
+        return persons.stream()
+                .filter(p -> Objects.equals(p.getLastName().toUpperCase(), lastName))
+                .collect(Collectors.toList());
+    }
 }
