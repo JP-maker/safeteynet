@@ -111,4 +111,28 @@ public class PersonController {
                     return ResponseEntity.notFound().build();
                 });
     }
+
+    /**
+     * Cette url doit retourner les adresses mail de tous les habitants de la ville.
+     * URL: GET /communityEmail?city=<city>
+     *
+     * @param city Le nom de la ville.
+     * @return ResponseEntity contenant le DTO CommunityEmailDTO ou une réponse 404.
+     */
+    @GetMapping("/communityEmail")
+    public ResponseEntity<CommunityEmailDTO> getCommunityEmail(
+            @RequestParam("city") String city) {
+        logger.info("Requête reçue pour /communityEmail avec la ville={}", city);
+
+        Optional<CommunityEmailDTO> result = personService.getCommunityEmailByCity(city.toUpperCase());
+
+        return result.map(dto -> {
+                    logger.info("getCommunityEmail - Réponse 200 OK pour la ville={}", city);
+                    return ResponseEntity.ok(dto);
+                })
+                .orElseGet(() -> {
+                    logger.warn("getCommunityEmail - Réponse 404 Not Found la ville={}", city);
+                    return ResponseEntity.notFound().build();
+                });
+    }
 }

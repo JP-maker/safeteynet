@@ -210,4 +210,29 @@ public class PersonService {
             return Optional.of(result);
         }
     }
+
+    public Optional<CommunityEmailDTO> getCommunityEmailByCity(String city) {
+        logger.debug("Recherche des adresses e-mail pour la ville: {}", city);
+
+        // 1. Trouver toutes les personnes vivant dans cette ville
+        List<Person> peopleInCity = personRepository.findByCity(city);
+        logger.debug("{} personnes trouvées dans la ville {}", peopleInCity.size(), city);
+
+        List<String> emails = new ArrayList<>();
+
+        // 2. Pour chaque personne, on récupère l'adresse e-mail
+        for (Person person : peopleInCity) {
+            emails.add(person.getEmail());
+        }
+
+        CommunityEmailDTO result = new CommunityEmailDTO(city, emails);
+        logger.info("Résultat pour la ville {}: {} adresses e-mail", city, emails.size());
+
+        if (emails.isEmpty()) {
+            logger.warn("Aucune adresse e-mail trouvée pour la ville {}", city);
+            return Optional.empty();
+        } else {
+            return Optional.of(result);
+        }
+    }
 }

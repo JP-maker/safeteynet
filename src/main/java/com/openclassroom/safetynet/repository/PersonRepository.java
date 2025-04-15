@@ -90,4 +90,16 @@ public class PersonRepository {
                 .filter(p -> Objects.equals(p.getLastName().toUpperCase(), lastName))
                 .collect(Collectors.toList());
     }
+
+    /**
+     * Trouve des personnes par ville.
+     * @param city nom de la ville.
+     * @return Un Optional contenant les personnes si trouvées, sinon Optional vide.
+     */
+    public List<Person> findByCity(String city) {
+        return persons.stream()
+                .filter(p -> Objects.equals(p.getCity().toUpperCase(), city))
+                .collect(Collectors.toList());
+    }
+
 }
