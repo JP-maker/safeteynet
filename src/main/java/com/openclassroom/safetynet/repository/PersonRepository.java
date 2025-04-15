@@ -102,4 +102,38 @@ public class PersonRepository {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Sauver une nouvelle personne.
+     * @param person class.
+     * @return la personne créée
+     */
+    public Person save(Person person) {
+        persons.removeIf(p -> p.getFirstName().equalsIgnoreCase(person.getFirstName())
+                && p.getLastName().equalsIgnoreCase(person.getLastName()));
+        persons.add(person);
+        return person;
+    }
+
+    /**
+     * Supprimer une personne en la trouvant par son nom et son prénom.
+     * @param firstName prénom.
+     * @param lastName nom.
+     * @return un booléan indiquant si la personne a été supprimée.
+     */
+    public boolean deleteByFirstNameAndLastName(String firstName, String lastName) {
+        return persons.removeIf(p -> p.getFirstName().equalsIgnoreCase(firstName)
+                && p.getLastName().equalsIgnoreCase(lastName));
+    }
+
+    /**
+     * Vérifier si une personne existe en la trouvant par son nom et son prénom.
+     * @param firstName prénom.
+     * @param lastName nom.
+     * @return un booléan indiquant si la personne existe.
+     */
+    public boolean existsById(String firstName, String lastName) {
+        return persons.stream()
+                .anyMatch(p -> p.getFirstName().equalsIgnoreCase(firstName)
+                        && p.getLastName().equalsIgnoreCase(lastName));
+    }
 }

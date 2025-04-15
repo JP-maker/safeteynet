@@ -1,13 +1,13 @@
 package com.openclassroom.safetynet.controller;
 
 import com.openclassroom.safetynet.dto.*;
+import com.openclassroom.safetynet.model.Person;
 import com.openclassroom.safetynet.service.PersonService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -134,5 +134,73 @@ public class PersonController {
                     logger.warn("getCommunityEmail - Réponse 404 Not Found la ville={}", city);
                     return ResponseEntity.notFound().build();
                 });
+    }
+
+    /**
+     * Endpoint pour ajouter une nouvelle personne.
+     * HTTP POST /person
+     * Corps de la requête: JSON représentant la personne à ajouter.
+     */
+    @PostMapping("/person")
+    public ResponseEntity<Person> addPerson(@RequestBody Person person) {
+        if (person.getFirstName() == null || person.getLastName() == null ||
+                person.getFirstName().isBlank() || person.getLastName().isBlank()) {
+            return ResponseEntity.badRequest().build(); // Mauvaise requête si nom/prénom manquant
+        }
+        try {
+            Person createdPerson = personService.addPerson(person);
+            // Retourne 201 Created avec la personne créée dans le corps
+            return ResponseEntity.status(HttpStatus.CREATED).body(createdPerson);
+        } catch (IllegalArgumentException e) {
+            // Gère le cas où la personne existe déjà (levé par le service)
+            // Retourne 409 Conflict
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+        } catch (Exception e) {
+            // Autre erreur potentielle
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    /**
+     * Endpoint pour mettre à jour une personne existante.
+     * HTTP PUT /person
+     * Corps de la requête: JSON représentant la personne avec les informations mises à jour.
+     * Le prénom et le nom dans le corps identifient la personne à mettre à jour.
+     */
+    @PutMapping("/person")
+    public ResponseEntity<Person> updatePerson(@RequestBody Person person) {
+        if (person.getFirstName() == null || person.getLastName() == null ||
+                person.getFirstName().isBlank() || person.getLastName().isBlank()) {
+            return ResponseEntity.badRequest().build(); // Mauvaise requête si nom/prénom manquant
+        }
+
+        Optional<Person> updatedPersonOpt = personService.updatePerson(person);
+
+        return updatedPersonOpt
+                .map(ResponseEntity::ok) // Si présent, retourne 200 OK avec la personne mise à jour
+                .orElseGet(() -> ResponseEntity.notFound().build()); // Sinon, retourne 404 Not Found
+    }
+
+    /**
+     * Endpoint pour supprimer une personne.
+     * HTTP DELETE /person?firstName=<prénom>&lastName=<nom>
+     * Paramètres de requête: firstName et lastName pour identifier la personne.
+     */
+    @DeleteMapping("/person")
+    public ResponseEntity<Void> deletePerson(@RequestParam String firstName, @RequestParam String lastName) {
+        if (firstName == null || lastName == null || firstName.isBlank() || lastName.isBlank()) {
+            return ResponseEntity.badRequest().build(); // Mauvaise requête si nom/prénom manquant
+        }
+
+        boolean deleted = personService.deletePerson(firstName, lastName);
+
+        if (deleted) {
+            // Retourne 204 No Content si la suppression a réussi
+            // Ou 200 OK si vous préférez, 204 est plus standard pour DELETE réussi sans corps de retour.
+            return ResponseEntity.noContent().build();
+        } else {
+            // Retourne 404 Not Found si la personne n'a pas été trouvée
+            return ResponseEntity.notFound().build();
+        }
     }
 }

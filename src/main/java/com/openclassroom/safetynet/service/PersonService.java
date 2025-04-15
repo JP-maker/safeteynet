@@ -235,4 +235,40 @@ public class PersonService {
             return Optional.of(result);
         }
     }
+
+    public Person addPerson(Person person) {
+        logger.debug("Ajout d'une personne: {}", person);
+        if (personRepository.existsById(person.getFirstName(), person.getLastName())) {
+            logger.info("Personne déjà existante: {}", person);
+            throw new IllegalArgumentException("Person with name " + person.getFirstName() + " " + person.getLastName() + " already exists.");
+        } else {
+            logger.info("Personne ajoutée: {}", person);
+            return personRepository.save(person);
+        }
+    }
+
+    public Optional<Person> updatePerson(Person personToUpdate) {
+
+        Optional<Person> existingPersonOpt = personRepository.findByFirstNameAndLastName(personToUpdate.getFirstName(),
+                personToUpdate.getLastName());
+
+        if (existingPersonOpt.isPresent()) {
+            Person existingPerson = existingPersonOpt.get();
+
+            existingPerson.setAddress(personToUpdate.getAddress());
+            existingPerson.setCity(personToUpdate.getCity());
+            existingPerson.setZip(personToUpdate.getZip());
+            existingPerson.setPhone(personToUpdate.getPhone());
+            existingPerson.setEmail(personToUpdate.getEmail());
+
+            personRepository.save(existingPerson);
+            return Optional.of(existingPerson);
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    public boolean deletePerson(String firstName, String lastName) {
+        return personRepository.deleteByFirstNameAndLastName(firstName, lastName);
+    }
 }
