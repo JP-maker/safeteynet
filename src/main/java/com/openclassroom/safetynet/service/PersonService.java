@@ -27,10 +27,11 @@ public class PersonService {
     private final FireStationRepository fireStationRepository;
 
     public PersonService(PersonRepository personRepository,
-                         MedicalRecordRepository medicalRecordRepository) {
+                         MedicalRecordRepository medicalRecordRepository,
+                         FireStationRepository fireStationRepository) {
         this.personRepository = personRepository;
         this.medicalRecordRepository = medicalRecordRepository;
-        this.fireStationRepository = new FireStationRepository();
+        this.fireStationRepository = fireStationRepository;
     }
 
     public Optional<ChildWithFamilyDTO> getChildAndFamilyByAddress(String address) {
@@ -234,6 +235,11 @@ public class PersonService {
         } else {
             return Optional.of(result);
         }
+    }
+
+    public List<Person> getAllPersons() {
+        logger.debug("Récupération de toutes les personnes");
+        return personRepository.findAll();
     }
 
     public Person addPerson(Person person) {

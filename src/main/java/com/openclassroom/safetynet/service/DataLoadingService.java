@@ -39,7 +39,7 @@ public class DataLoadingService {
         this.dataLocation = ConfigData.DIRECTORY_DATA;
     }
 
-    @PostConstruct
+    //@PostConstruct
     public void loadData() {
         try {
             logger.info("Tentative de chargement des données depuis : {}", dataLocation);
@@ -53,9 +53,9 @@ public class DataLoadingService {
             try (InputStream inputStream = resource.getInputStream()) {
                 DataContainer data = objectMapper.readValue(inputStream, DataContainer.class);
 
-                personRepository.setData(data.getPersons());
-                firestationRepository.setData(data.getFirestations());
-                medicalRecordRepository.setData(data.getMedicalrecords());
+                //personRepository.setData(data.getPersons());
+                //firestationRepository.setData(data.getFirestations());
+                //medicalRecordRepository.setData(data.getMedicalrecords());
 
                 logger.info("Données chargées avec succès depuis {}", dataLocation);
 

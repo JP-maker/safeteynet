@@ -162,6 +162,19 @@ public class PersonController {
     }
 
     /**
+     * Endpoint pour récupérer toutes les personnes.
+     * HTTP GET /person
+     */
+    @GetMapping("/person")
+    public ResponseEntity<List<Person>> getPersons() {
+        List<Person> persons = personService.getAllPersons();
+        if (persons.isEmpty()) {
+            return ResponseEntity.noContent().build(); // Retourne 204 No Content si aucune personne trouvée
+        }
+        return ResponseEntity.ok(persons); // Retourne 200 OK avec la liste des personnes
+    }
+
+    /**
      * Endpoint pour mettre à jour une personne existante.
      * HTTP PUT /person
      * Corps de la requête: JSON représentant la personne avec les informations mises à jour.

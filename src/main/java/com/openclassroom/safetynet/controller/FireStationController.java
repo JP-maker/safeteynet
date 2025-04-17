@@ -96,12 +96,12 @@ public class FireStationController {
      * Endpoint pour retourner une liste de tous les foyers desservis par la caserne
      * URL: GET /flood/stations?stations=<a list of station_numbers>
      *
-     * @param station_numbers Une liste de numéro de station de pompier.
+     * @param stations Une liste de numéro de station de pompier.
      * @return ResponseEntity contenant le DTO floodDTO ou une réponse 404.
      */
     @GetMapping("/flood/stations")
     public ResponseEntity<ListOfAddressWithListOfPersonWithMedicalRecordDTO> getListOfPersonsWithMedicalRecordsByListOfFireStation(
-            @RequestParam("station_numbers") List<String> fireStationsNumber) {
+            @RequestParam("stations") List<String> fireStationsNumber) {
 
         logger.info("Requête reçue pour /flood/stations avec station_numbers={}", fireStationsNumber);
 
