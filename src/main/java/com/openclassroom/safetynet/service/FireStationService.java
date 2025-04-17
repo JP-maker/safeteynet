@@ -2,6 +2,7 @@ package com.openclassroom.safetynet.service;
 
 import com.openclassroom.safetynet.constants.ConfigData;
 import com.openclassroom.safetynet.dto.*;
+import com.openclassroom.safetynet.model.FireStation;
 import com.openclassroom.safetynet.model.MedicalRecord;
 import com.openclassroom.safetynet.model.Person;
 import com.openclassroom.safetynet.repository.FireStationRepository;
@@ -179,5 +180,75 @@ public class FireStationService {
         logger.info("Résultat les stations {}: {}",
                 stationNumbers, result);
         return Optional.of(result);
+    }
+
+    /**
+     * Ajoute un nouveau mapping adresse/station.
+     * Vérifie si l'adresse existe déjà.
+     * @param fireStation Le mapping à ajouter.
+     * @return Le mapping ajouté.
+     * @throws IllegalArgumentException si l'adresse existe déjà ou si les données sont invalides.
+     */
+    public FireStation addFireStation(FireStation fireStation) {
+        if (fireStation == null || fireStation.getAddress() == null || fireStation.getAddress().isBlank() ||
+                fireStation.getStation() == null || fireStation.getStation().isBlank()) {
+            logger.error("Tentative d'ajout de FireStation avec des données invalides : {}", fireStation);
+            throw new IllegalArgumentException("L'adresse et le numéro de station sont requis.");
+        }
+
+        // Vérifier si un mapping existe déjà pour cette adresse
+        if (fireStationRepository.existsByAddress(fireStation.getAddress())) {
+            logger.warn("Tentative d'ajout d'un mapping pour une adresse existante : {}", fireStation.getAddress());
+            // Lever une exception pour indiquer un conflit (sera géré par le contrôleur)
+            throw new IllegalArgumentException("Un mapping existe déjà pour l'adresse : " + fireStation.getAddress());
+        }
+
+        logger.info("Ajout d'un nouveau mapping FireStation : {}", fireStation);
+        // La méthode save du repository gère l'ajout et la sauvegarde via FileIOService
+        return fireStationRepository.save(fireStation);
+    }
+
+    /**
+     * Met à jour le numéro de station pour une adresse donnée.
+     * @param fireStation Contient l'adresse à identifier et le nouveau numéro de station.
+     * @return Un Optional contenant le mapping mis à jour si l'adresse existait, sinon Optional vide.
+     * @throws IllegalArgumentException si les données sont invalides.
+     */
+    public Optional<FireStation> updateFireStation(FireStation fireStation) {
+        if (fireStation == null || fireStation.getAddress() == null || fireStation.getAddress().isBlank() ||
+                fireStation.getStation() == null || fireStation.getStation().isBlank()) {
+            logger.error("Tentative de mise à jour de FireStation avec des données invalides : {}", fireStation);
+            throw new IllegalArgumentException("L'adresse et le numéro de station sont requis pour la mise à jour.");
+        }
+
+        // Vérifier si un mapping existe pour cette adresse AVANT d'appeler save
+        if (!fireStationRepository.existsByAddress(fireStation.getAddress())) {
+            logger.warn("Tentative de mise à jour d'un mapping pour une adresse non trouvée : {}", fireStation.getAddress());
+            return Optional.empty(); // Indique que l'adresse n'a pas été trouvée
+        }
+
+        logger.info("Mise à jour du mapping FireStation pour l'adresse '{}' vers la station '{}'",
+                fireStation.getAddress(), fireStation.getStation());
+        // La méthode save du repository gère le remplacement et la sauvegarde
+        FireStation updatedStation = fireStationRepository.save(fireStation);
+        return Optional.of(updatedStation);
+    }
+
+    /**
+     * Supprime le mapping pour une adresse donnée.
+     * @param address L'adresse dont le mapping doit être supprimé.
+     * @return true si le mapping a été trouvé et supprimé, false sinon.
+     */
+    public boolean deleteFireStationMapping(String address) {
+        if (address == null || address.isBlank()) {
+            logger.warn("Tentative de suppression de FireStation avec une adresse invalide.");
+            return false;
+        }
+        logger.info("Tentative de suppression du mapping FireStation pour l'adresse : {}", address);
+        return fireStationRepository.deleteByAddress(address);
+    }
+
+    public List<FireStation> getAllFireStations() {
+        return fireStationRepository.findAll();
     }
 }

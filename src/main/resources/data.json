@@ -231,6 +231,9 @@
   }, {
     "address" : "951 LoneTree Rd",
     "station" : "2"
+  }, {
+    "address" : "8 les platanes",
+    "station" : "19"
   } ],
   "medicalrecords" : [ {
     "firstName" : "John",

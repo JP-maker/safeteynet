@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Repository
@@ -54,5 +55,84 @@ public class FireStationRepository {
      */
     public List<FireStation> findAll() {
         return new ArrayList<>(this.fileIOService.getFireStations()); // Retourne une copie
+    }
+
+    // --- Méthodes Write (Create/Update/Delete) ---
+
+    /**
+     * Sauvegarde une caserne (ajoute si nouvelle adresse, met à jour si adresse existante).
+     * @param fireStation L'objet FireStation à sauvegarder.
+     * @return L'objet FireStation sauvegardé.
+     * @throws IllegalArgumentException si fireStation ou son adresse/station est null/vide.
+     */
+    public FireStation save(FireStation fireStation) {
+        if (fireStation == null || fireStation.getAddress() == null || fireStation.getAddress().isBlank() ||
+                fireStation.getStation() == null || fireStation.getStation().isBlank()) {
+            throw new IllegalArgumentException("FireStation, son adresse et son numéro de station ne peuvent être nuls ou vides.");
+        }
+
+        // 1. Obtenir la liste actuelle (qui est une copie)
+        List<FireStation> currentStations = new ArrayList<>(fileIOService.getFireStations());
+
+        // 2. Enlever l'ancienne entrée pour cette adresse, si elle existe (comparaison insensible à la casse)
+        boolean removed = currentStations.removeIf(fs -> fs.getAddress() != null
+                && fs.getAddress().equalsIgnoreCase(fireStation.getAddress().trim()));
+        if (removed) {
+            logger.debug("Ancienne entrée pour l'adresse '{}' supprimée avant la sauvegarde.", fireStation.getAddress());
+        }
+
+        // 3. Ajouter la nouvelle entrée (ou la version mise à jour)
+        FireStation stationToSave = new FireStation();
+        stationToSave.setAddress(fireStation.getAddress().trim());
+        stationToSave.setStation(fireStation.getStation().trim());
+        currentStations.add(stationToSave);
+        logger.debug("Nouvelle entrée pour l'adresse '{}' avec station '{}' ajoutée à la liste.", stationToSave.getAddress(), stationToSave.getStation());
+
+        // 4. Passer la liste modifiée complète à FileIOService pour sauvegarde
+        fileIOService.setFireStations(currentStations);
+
+        logger.info("FireStation sauvegardée: Adresse='{}', Station='{}'", stationToSave.getAddress(), stationToSave.getStation());
+        return stationToSave; // Retourner l'objet sauvegardé (avec trim)
+    }
+
+    /**
+     * Supprime le mapping d'une caserne par son adresse.
+     * @param address L'adresse dont le mapping doit être supprimé.
+     * @return true si un mapping a été trouvé et supprimé, false sinon.
+     */
+    public boolean deleteByAddress(String address) {
+        if (address == null || address.isBlank()) {
+            return false;
+        }
+        String trimmedAddress = address.trim();
+
+        List<FireStation> currentStations = new ArrayList<>(fileIOService.getFireStations());
+
+        // Essayer de supprimer l'entrée correspondante (insensible à la casse)
+        boolean removed = currentStations.removeIf(fs -> fs.getAddress() != null
+                && fs.getAddress().equalsIgnoreCase(trimmedAddress));
+
+        // Si quelque chose a été supprimé, sauvegarder la nouvelle liste
+        if (removed) {
+            fileIOService.setFireStations(currentStations);
+            logger.info("Mapping FireStation pour l'adresse '{}' supprimé.", trimmedAddress);
+        } else {
+            logger.warn("Aucun mapping FireStation trouvé pour l'adresse '{}' lors de la tentative de suppression.", trimmedAddress);
+        }
+        return removed;
+    }
+
+    /**
+     * Vérifie si un mapping existe pour une adresse donnée.
+     * @param address L'adresse à vérifier.
+     * @return true si un mapping existe, false sinon.
+     */
+    public boolean existsByAddress(String address) {
+        if (address == null || address.isBlank()) {
+            return false;
+        }
+        // Utiliser equalsIgnoreCase pour être plus flexible sur la casse de l'adresse
+        return fileIOService.getFireStations().stream()
+                .anyMatch(f -> f.getAddress() != null && f.getAddress().equalsIgnoreCase(address.trim()));
     }
 }

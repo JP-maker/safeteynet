@@ -4,13 +4,13 @@ import com.openclassroom.safetynet.dto.AddressWithListOfPersonWithMedicalRecordD
 import com.openclassroom.safetynet.dto.FireStationCoverageDTO;
 import com.openclassroom.safetynet.dto.ListOfAddressWithListOfPersonWithMedicalRecordDTO;
 import com.openclassroom.safetynet.dto.PhoneAlertDTO;
+import com.openclassroom.safetynet.model.FireStation;
 import com.openclassroom.safetynet.service.FireStationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Optional;
@@ -129,5 +129,97 @@ public class FireStationController {
                     logger.warn("Réponse 404 Not Found pour firestation={}", fireStationsNumber);
                     return ResponseEntity.notFound().build();
                 });
+    }
+
+    /**
+     * Endpoint pour ajouter un nouveau mapping caserne/adresse.
+     * POST /firestation
+     * Corps: {"address": "...", "station": "..."}
+     */
+    @PostMapping("/firestation")
+    public ResponseEntity<FireStation> addFireStation(@RequestBody FireStation fireStation) {
+        try {
+            FireStation createdStation = fireStationService.addFireStation(fireStation);
+            logger.info("Endpoint POST /firestation: Mapping créé avec succès pour {}", fireStation.getAddress());
+            // Retourne 201 Created avec l'objet créé
+            return ResponseEntity.status(HttpStatus.CREATED).body(createdStation);
+        } catch (IllegalArgumentException e) {
+            // Gère le cas où l'adresse existe déjà (conflit) ou données invalides
+            logger.warn("Endpoint POST /firestation: Échec de création - {}", e.getMessage());
+            if (e.getMessage().contains("existe déjà")) {
+                return ResponseEntity.status(HttpStatus.CONFLICT).build(); // 409 Conflict
+            } else {
+                return ResponseEntity.badRequest().build(); // 400 Bad Request pour données invalides
+            }
+        } catch (Exception e) {
+            logger.error("Endpoint POST /firestation: Erreur interne lors de la création", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build(); // 500
+        }
+    }
+
+    /**
+     * Endpoint pour mettre à jour le numéro de station d'un mapping existant.
+     * PUT /firestation
+     * Corps: {"address": "...", "station": "..."} (l'adresse identifie le mapping à maj)
+     */
+    @PutMapping("/firestation")
+    public ResponseEntity<FireStation> updateFireStation(@RequestBody FireStation fireStation) {
+        try {
+            Optional<FireStation> updatedStationOpt = fireStationService.updateFireStation(fireStation);
+
+            return updatedStationOpt
+                    .map(station -> {
+                        logger.info("Endpoint PUT /firestation: Mapping mis à jour avec succès pour {}", station.getAddress());
+                        return ResponseEntity.ok(station); // 200 OK avec l'objet mis à jour
+                    })
+                    .orElseGet(() -> {
+                        logger.warn("Endpoint PUT /firestation: Mapping non trouvé pour l'adresse {}", fireStation.getAddress());
+                        return ResponseEntity.notFound().build(); // 404 Not Found
+                    });
+        } catch (IllegalArgumentException e) {
+            logger.warn("Endpoint PUT /firestation: Échec de mise à jour - Données invalides : {}", e.getMessage());
+            return ResponseEntity.badRequest().build(); // 400 Bad Request
+        } catch (Exception e) {
+            logger.error("Endpoint PUT /firestation: Erreur interne lors de la mise à jour", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build(); // 500
+        }
+    }
+
+    /**
+     * Endpoint pour supprimer un mapping caserne/adresse.
+     * DELETE /firestation?address=<adresse_a_supprimer>
+     */
+    @DeleteMapping("/firestation")
+    public ResponseEntity<Void> deleteFireStation(@RequestParam String address) {
+        try {
+            boolean deleted = fireStationService.deleteFireStationMapping(address);
+
+            if (deleted) {
+                logger.info("Endpoint DELETE /firestation: Mapping supprimé avec succès pour l'adresse {}", address);
+                return ResponseEntity.noContent().build(); // 204 No Content (succès sans corps)
+            } else {
+                logger.warn("Endpoint DELETE /firestation: Mapping non trouvé pour l'adresse {}", address);
+                return ResponseEntity.notFound().build(); // 404 Not Found
+            }
+        } catch (Exception e) {
+            logger.error("Endpoint DELETE /firestation: Erreur interne lors de la suppression pour l'adresse {}", address, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build(); // 500
+        }
+    }
+
+    /**
+     * Endpoint pour récupérer tous les mappings caserne/adresse.
+     * GET /firestation
+     */
+    @GetMapping("/firestation/all")
+    public ResponseEntity<List<FireStation>> getAllFireStations() {
+        try {
+            List<FireStation> stations = fireStationService.getAllFireStations();
+            logger.debug("Endpoint GET /firestation/all: Récupération de {} mappings.", stations.size());
+            return ResponseEntity.ok(stations);
+        } catch (Exception e) {
+            logger.error("Endpoint GET /firestation/all: Erreur interne lors de la récupération", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build(); // 500
+        }
     }
 }
