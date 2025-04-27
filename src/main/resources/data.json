@@ -184,7 +184,7 @@
     "phone" : "841-874-7458",
     "email" : "gramps@email.com"
   }, {
-    "firstName" : "John",
+    "firstName" : "Johnny",
     "lastName" : "Smith",
     "address" : "644 Gershwin Cir",
     "city" : "Culver",
@@ -232,8 +232,8 @@
     "address" : "951 LoneTree Rd",
     "station" : "2"
   }, {
-    "address" : "8 les platanes",
-    "station" : "19"
+    "address" : "9 les platanes",
+    "station" : "9"
   } ],
   "medicalrecords" : [ {
     "firstName" : "John",

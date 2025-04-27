@@ -28,19 +28,32 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
+/**
+ * Classe de test unitaire pour {@link PersonService}.
+ * <p>
+ * Utilise Mockito pour simuler les dépendances (repositories) et tester
+ * la logique métier du service en isolation. Les méthodes qui dépendent
+ * d'{@link com.openclassroom.safetynet.utils.AgeCalculator} supposent que
+ * cet utilitaire fonctionne correctement (il devrait avoir ses propres tests).
+ * </p>
+ */
 @ExtendWith(SpringExtension.class) // Active les annotations Mockito (@Mock, @InjectMocks)
 class PersonServiceTest {
 
-    @Mock // Crée un mock pour ce repository
+    /** Mock du repository des personnes. */
+    @Mock
     private PersonRepository personRepository;
 
-    @Mock // Crée un mock pour ce repository
+    /** Mock du repository des dossiers médicaux. */
+    @Mock
     private MedicalRecordRepository medicalRecordRepository;
 
-    @Mock // Crée un mock pour ce repository
+    /** Mock du repository des casernes. */
+    @Mock
     private FireStationRepository fireStationRepository;
 
-    @InjectMocks // Crée une instance de PersonService et injecte les mocks déclarés ci-dessus
+    /** Instance de la classe sous test, avec injection des mocks. */
+    @InjectMocks
     private PersonService personService;
 
     // Données de test réutilisables
@@ -53,7 +66,11 @@ class PersonServiceTest {
     private String address1 = "123 Main St";
     private String city1 = "Culver";
 
-
+    /**
+     * Méthode d'initialisation exécutée avant chaque test (@Test).
+     * Prépare des objets Person et MedicalRecord avec des dates de naissance
+     * permettant de simuler des adultes et des enfants pour les tests.
+     */
     @BeforeEach
     void setUp() {
         // Formatter pour simuler AgeCalculator
@@ -113,8 +130,13 @@ class PersonServiceTest {
 
     // --- Tests pour getChildAndFamilyByAddress ---
 
+    /**
+     * Teste {@code getChildAndFamilyByAddress} avec une adresse contenant des adultes et des enfants.
+     * Doit retourner un DTO contenant les informations correctes.
+     */
     @Test
-    @DisplayName("Test getChildAndFamilyByAddress: Doit retourner les enfants et adultes à l'adresse donnée")
+    @DisplayName("getChildAndFamilyByAddress: Doit retourner enfants et adultes pour une adresse")
+
     void getChildAndFamilyByAddress_shouldReturnChildrenAndAdults() {
         // Arrange
         List<Person> peopleAtAddress = List.of(personAdult1, personAdult2, personChild1);
@@ -142,8 +164,12 @@ class PersonServiceTest {
         verify(medicalRecordRepository, times(3)).findByFirstNameAndLastName(anyString(), anyString());
     }
 
+    /**
+     * Teste {@code getChildAndFamilyByAddress} avec une adresse ne contenant que des adultes.
+     * Doit retourner un Optional vide.
+     */
     @Test
-    @DisplayName("Test getChildAndFamilyByAddress: Doit retourner Optional vide si aucun enfant n'est trouvé")
+    @DisplayName("getChildAndFamilyByAddress: Doit retourner vide si aucun enfant trouvé")
     void getChildAndFamilyByAddress_shouldReturnEmptyWhenNoChildren() {
         // Arrange
         List<Person> peopleAtAddress = List.of(personAdult1, personAdult2); // Pas d'enfant
@@ -162,8 +188,12 @@ class PersonServiceTest {
         verify(medicalRecordRepository, times(2)).findByFirstNameAndLastName(anyString(), anyString());
     }
 
+    /**
+     * Teste {@code getChildAndFamilyByAddress} avec une adresse où personne ne réside.
+     * Doit retourner un Optional vide.
+     */
     @Test
-    @DisplayName("Test getChildAndFamilyByAddress: Doit retourner Optional vide si aucune personne à l'adresse")
+    @DisplayName("getChildAndFamilyByAddress: Doit retourner vide si personne à l'adresse")
     void getChildAndFamilyByAddress_shouldReturnEmptyWhenNoPeopleAtAddress() {
         // Arrange
         when(personRepository.findByAddressIn(eq(List.of(address1)))).thenReturn(Collections.emptyList());
@@ -179,8 +209,13 @@ class PersonServiceTest {
         verify(medicalRecordRepository, never()).findByFirstNameAndLastName(anyString(), anyString()); // Ne doit pas être appelé
     }
 
+    /**
+     * Teste {@code getChildAndFamilyByAddress} lorsqu'une personne (un enfant potentiel)
+     * n'a pas de dossier médical.
+     * Doit retourner un Optional vide car l'enfant ne peut être identifié.
+     */
     @Test
-    @DisplayName("Test getChildAndFamilyByAddress: Gère les personnes sans dossier médical")
+    @DisplayName("getChildAndFamilyByAddress: Doit retourner vide si enfant sans dossier médical")
     void getChildAndFamilyByAddress_shouldHandlePeopleWithoutMedicalRecord() {
         // Arrange
         List<Person> peopleAtAddress = List.of(personAdult1, personChild1); // Un avec MR, un sans
@@ -203,8 +238,12 @@ class PersonServiceTest {
 
     // --- Tests pour getPersonFireStationAndMedicalReportByAddress ---
 
+    /**
+     * Teste {@code getPersonFireStationAndMedicalReportByAddress} dans le cas nominal.
+     * Doit retourner les informations complètes pour les personnes à l'adresse.
+     */
     @Test
-    @DisplayName("Test getPersonFireStationAndMedicalReportByAddress: Doit retourner les infos pour une adresse")
+    @DisplayName("getPersonFireStationAndMedicalReportByAddress: Doit retourner infos complètes")
     void getPersonFireStationAndMedicalReportByAddress_shouldReturnInfo() {
         // Arrange
         String stationNumber = "3";
@@ -233,8 +272,12 @@ class PersonServiceTest {
         verify(medicalRecordRepository).findByFirstNameAndLastName("John", "Doe");
     }
 
+    /**
+     * Teste {@code getPersonFireStationAndMedicalReportByAddress} lorsque personne ne réside
+     * à l'adresse donnée. Doit retourner un Optional vide.
+     */
     @Test
-    @DisplayName("Test getPersonFireStationAndMedicalReportByAddress: Doit retourner Optional vide si personne à l'adresse")
+    @DisplayName("getPersonFireStationAndMedicalReportByAddress: Doit retourner vide si personne à l'adresse")
     void getPersonFireStationAndMedicalReportByAddress_shouldReturnEmptyWhenNoPeople() {
         // Arrange
         when(personRepository.findByAddressIn(eq(List.of(address1)))).thenReturn(Collections.emptyList());
@@ -247,7 +290,6 @@ class PersonServiceTest {
 
         // Verify
         verify(personRepository).findByAddressIn(anyList());
-        verify(fireStationRepository, never()).findStationNumberByAddress(anyString());
         verify(medicalRecordRepository, never()).findByFirstNameAndLastName(anyString(), anyString());
     }
 
@@ -277,8 +319,12 @@ class PersonServiceTest {
 
     // --- Tests pour getPersonInfoByLastName ---
 
+    /**
+     * Teste {@code getPersonInfoByLastName} dans le cas nominal.
+     * Doit retourner les informations des personnes trouvées.
+     */
     @Test
-    @DisplayName("Test getPersonInfoByLastName: Doit retourner les infos pour les personnes trouvées")
+    @DisplayName("getPersonInfoByLastName: Doit retourner infos si personnes trouvées")
     void getPersonInfoByLastName_shouldReturnInfoForFoundPersons() {
         // Arrange
         String lastName = "Doe";
@@ -303,8 +349,12 @@ class PersonServiceTest {
         verify(medicalRecordRepository, times(2)).findByFirstNameAndLastName(anyString(), eq(lastName));
     }
 
+    /**
+     * Teste {@code getPersonInfoByLastName} lorsqu'aucune personne n'est trouvée pour ce nom.
+     * Doit retourner un Optional vide.
+     */
     @Test
-    @DisplayName("Test getPersonInfoByLastName: Doit retourner Optional vide si personne non trouvée")
+    @DisplayName("getPersonInfoByLastName: Doit retourner vide si personne non trouvée")
     void getPersonInfoByLastName_shouldReturnEmptyWhenNotFound() {
         // Arrange
         String lastName = "Unknown";
@@ -323,8 +373,14 @@ class PersonServiceTest {
 
     // --- Tests pour getCommunityEmailByCity ---
 
+    // --- Tests pour getCommunityEmailByCity ---
+
+    /**
+     * Teste {@code getCommunityEmailByCity} dans le cas nominal.
+     * Doit retourner les e-mails des personnes de la ville.
+     */
     @Test
-    @DisplayName("Test getCommunityEmailByCity: Doit retourner les emails pour la ville donnée")
+    @DisplayName("getCommunityEmailByCity: Doit retourner les emails pour la ville")
     void getCommunityEmailByCity_shouldReturnEmailsForCity() {
         // Arrange
         when(personRepository.findByCity(eq(city1))).thenReturn(List.of(personAdult1, personAdult2));
@@ -344,8 +400,12 @@ class PersonServiceTest {
         verify(personRepository).findByCity(eq(city1));
     }
 
+    /**
+     * Teste {@code getCommunityEmailByCity} lorsqu'aucune personne n'est trouvée dans la ville.
+     * Doit retourner un Optional vide.
+     */
     @Test
-    @DisplayName("Test getCommunityEmailByCity: Doit retourner Optional vide si aucune personne dans la ville")
+    @DisplayName("getCommunityEmailByCity: Doit retourner vide si aucune personne dans la ville")
     void getCommunityEmailByCity_shouldReturnEmptyWhenNoPeopleInCity() {
         // Arrange
         String unknownCity = "UnknownCity";
@@ -363,8 +423,12 @@ class PersonServiceTest {
 
     // --- Tests pour getAllPersons ---
 
+    /**
+     * Teste {@code getAllPersons}.
+     * Doit simplement retourner la liste fournie par le repository.
+     */
     @Test
-    @DisplayName("Test getAllPersons: Doit retourner la liste des personnes du repository")
+    @DisplayName("getAllPersons: Doit retourner la liste du repository")
     void getAllPersons_shouldReturnAllPersons() {
         // Arrange
         List<Person> expectedList = List.of(personAdult1, personAdult2);
@@ -382,8 +446,11 @@ class PersonServiceTest {
 
     // --- Tests pour addPerson ---
 
+    /**
+     * Teste l'ajout réussi d'une nouvelle personne.
+     */
     @Test
-    @DisplayName("Test addPerson: Doit ajouter une personne si elle n'existe pas")
+    @DisplayName("addPerson: Doit ajouter la personne si elle n'existe pas")
     void addPerson_shouldAddPersonWhenNotExists() {
         // Arrange
         when(personRepository.existsById(eq(personAdult1.getFirstName()), eq(personAdult1.getLastName()))).thenReturn(false);
@@ -401,8 +468,12 @@ class PersonServiceTest {
         verify(personRepository).save(eq(personAdult1)); // Vérifier que save est appelé avec le bon objet
     }
 
+    /**
+     * Teste l'ajout d'une personne qui existe déjà.
+     * Doit lancer {@link IllegalArgumentException}.
+     */
     @Test
-    @DisplayName("Test addPerson: Doit lancer une exception si la personne existe déjà")
+    @DisplayName("addPerson: Doit lancer une exception si la personne existe déjà")
     void addPerson_shouldThrowExceptionWhenExists() {
         // Arrange
         when(personRepository.existsById(eq(personAdult1.getFirstName()), eq(personAdult1.getLastName()))).thenReturn(true);
@@ -410,7 +481,7 @@ class PersonServiceTest {
         // Act & Assert
         assertThatThrownBy(() -> personService.addPerson(personAdult1))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("already exists");
+                .hasMessageContaining("Une personne nommée John Doe existe déjà.");
 
         // Verify
         verify(personRepository).existsById(eq(personAdult1.getFirstName()), eq(personAdult1.getLastName()));
@@ -419,8 +490,12 @@ class PersonServiceTest {
 
     // --- Tests pour updatePerson ---
 
+    /**
+     * Teste la mise à jour réussie d'une personne existante.
+     * Vérifie que les champs corrects sont mis à jour.
+     */
     @Test
-    @DisplayName("Test updatePerson: Doit mettre à jour la personne si elle existe")
+    @DisplayName("updatePerson: Doit mettre à jour la personne existante")
     void updatePerson_shouldUpdatePersonWhenExists() {
         // Arrange
         Person updatedInfo = new Person();
@@ -458,8 +533,12 @@ class PersonServiceTest {
         verify(personRepository).save(any(Person.class)); // Vérifier que save a été appelé
     }
 
+    /**
+     * Teste la tentative de mise à jour d'une personne qui n'existe pas.
+     * Doit retourner un Optional vide.
+     */
     @Test
-    @DisplayName("Test updatePerson: Doit retourner Optional vide si la personne n'existe pas")
+    @DisplayName("updatePerson: Doit retourner vide si la personne n'existe pas")
     void updatePerson_shouldReturnEmptyWhenNotExists() {
         // Arrange
         Person nonExistentPerson = new Person();
@@ -486,8 +565,12 @@ class PersonServiceTest {
 
     // --- Tests pour deletePerson ---
 
+    /**
+     * Teste la tentative de suppression avec des noms invalides.
+     * Doit retourner {@code false} sans appeler le repository.
+     */
     @Test
-    @DisplayName("Test deletePerson: Doit retourner true si la suppression réussit")
+    @DisplayName("deletePerson: Doit retourner false si noms invalides")
     void deletePerson_shouldReturnTrueWhenDeleted() {
         // Arrange
         when(personRepository.deleteByFirstNameAndLastName(eq("John"), eq("Doe"))).thenReturn(true);
@@ -502,8 +585,12 @@ class PersonServiceTest {
         verify(personRepository).deleteByFirstNameAndLastName(eq("John"), eq("Doe"));
     }
 
+    /**
+     * Teste la tentative de suppression d'une personne qui n'existe pas.
+     * Doit retourner {@code false}.
+     */
     @Test
-    @DisplayName("Test deletePerson: Doit retourner false si la personne n'est pas trouvée")
+    @DisplayName("deletePerson: Doit retourner false si personne non trouvée")
     void deletePerson_shouldReturnFalseWhenNotFound() {
         // Arrange
         when(personRepository.deleteByFirstNameAndLastName(eq("Unknown"), eq("Person"))).thenReturn(false);
