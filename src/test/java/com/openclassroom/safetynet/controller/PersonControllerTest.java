@@ -1,7 +1,10 @@
-package com.openclassroom.safetynet; // Adaptez le package
+package com.openclassroom.safetynet.controller; // Adaptez le package
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.openclassroom.safetynet.controller.PersonController;
+import com.openclassroom.safetynet.dto.ChildWithFamilyDTO;
+import com.openclassroom.safetynet.dto.CommunityEmailDTO;
+import com.openclassroom.safetynet.dto.FirePersonDTO;
+import com.openclassroom.safetynet.dto.ListOfPersonInfolastNameDTO;
 import com.openclassroom.safetynet.model.Person;
 import com.openclassroom.safetynet.service.PersonService;
 import org.junit.jupiter.api.BeforeEach; // Ou juste utiliser @Test
@@ -14,6 +17,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any; // Pour les arguments de mock
@@ -58,6 +62,148 @@ public class PersonControllerTest {
         personToUpdate.setPhone("555-222");
         personToUpdate.setEmail("john.doe@mail.com");
     }
+
+    // --- Tests pour GET /person ---
+    @Test
+    void getPersonsWhenPersonsExistShouldReturnOk() throws Exception {
+        when(personService.getAllPersons()).thenReturn(List.of(person1));
+
+        mockMvc.perform(get("/person"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$[0].firstName").value("John"));
+
+        verify(personService).getAllPersons();
+    }
+
+    @Test
+    void getPersonsWhenNoPersonsShouldReturnNoContent() throws Exception {
+        when(personService.getAllPersons()).thenReturn(List.of());
+
+        mockMvc.perform(get("/person"))
+                .andExpect(status().isNoContent());
+
+        verify(personService).getAllPersons();
+    }
+
+    // --- Tests pour GET /childAlert ---
+    @Test
+    void getChildrenAndFamilyByAddressWhenAddressValidShouldReturnOk() throws Exception {
+        when(personService.getChildAndFamilyByAddress(eq("1 MAIN ST")))
+                .thenReturn(Optional.of(new ChildWithFamilyDTO()));
+
+        mockMvc.perform(get("/childAlert")
+                        .param("address", "1 Main St"))
+                .andExpect(status().isOk());
+
+        verify(personService).getChildAndFamilyByAddress("1 MAIN ST");
+    }
+
+    @Test
+    void getChildrenAndFamilyByAddressWhenAddressEmptyShouldReturnBadRequest() throws Exception {
+        mockMvc.perform(get("/childAlert")
+                        .param("address", ""))
+                .andExpect(status().isBadRequest());
+
+        verify(personService, never()).getChildAndFamilyByAddress(any());
+    }
+
+    @Test
+    void getChildrenAndFamilyByAddressWhenNotFoundShouldReturnNotFound() throws Exception {
+        when(personService.getChildAndFamilyByAddress(eq("UNKNOWN ADDRESS")))
+                .thenReturn(Optional.empty());
+
+        mockMvc.perform(get("/childAlert")
+                        .param("address", "Unknown Address"))
+                .andExpect(status().isNotFound());
+
+        verify(personService).getChildAndFamilyByAddress("UNKNOWN ADDRESS");
+    }
+
+    // --- Tests pour GET /fire ---
+    @Test
+    void getFireWhenAddressValidShouldReturnOk() throws Exception {
+        when(personService.getPersonFireStationAndMedicalReportByAddress(eq("1 MAIN ST")))
+                .thenReturn(Optional.of(new FirePersonDTO()));
+
+        mockMvc.perform(get("/fire")
+                        .param("address", "1 Main St"))
+                .andExpect(status().isOk());
+
+        verify(personService).getPersonFireStationAndMedicalReportByAddress("1 MAIN ST");
+    }
+
+    @Test
+    void getFireWhenAddressEmptyShouldReturnBadRequest() throws Exception {
+        mockMvc.perform(get("/fire")
+                        .param("address", ""))
+                .andExpect(status().isBadRequest());
+
+        verify(personService, never()).getPersonFireStationAndMedicalReportByAddress(any());
+    }
+
+    @Test
+    void getFireWhenNotFoundShouldReturnNotFound() throws Exception {
+        when(personService.getPersonFireStationAndMedicalReportByAddress(eq("UNKNOWN ADDRESS")))
+                .thenReturn(Optional.empty());
+
+        mockMvc.perform(get("/fire")
+                        .param("address", "Unknown Address"))
+                .andExpect(status().isNotFound());
+
+        verify(personService).getPersonFireStationAndMedicalReportByAddress("UNKNOWN ADDRESS");
+    }
+
+    // --- Tests pour GET /personInfolastName ---
+    @Test
+    void getPersonInfolastNameWhenLastNameValidShouldReturnOk() throws Exception {
+        when(personService.getPersonInfoByLastName(eq("DOE")))
+                .thenReturn(Optional.of(new ListOfPersonInfolastNameDTO()));
+
+        mockMvc.perform(get("/personInfolastName")
+                        .param("lastname", "Doe"))
+                .andExpect(status().isOk());
+
+        verify(personService).getPersonInfoByLastName("DOE");
+    }
+
+    @Test
+    void getPersonInfolastNameWhenNotFoundShouldReturnNotFound() throws Exception {
+        when(personService.getPersonInfoByLastName(eq("UNKNOWN")))
+                .thenReturn(Optional.empty());
+
+        mockMvc.perform(get("/personInfolastName")
+                        .param("lastname", "Unknown"))
+                .andExpect(status().isNotFound());
+
+        verify(personService).getPersonInfoByLastName("UNKNOWN");
+    }
+
+    // --- Tests pour GET /communityEmail ---
+    @Test
+    void getCommunityEmailWhenCityValidShouldReturnOk() throws Exception {
+        when(personService.getCommunityEmailByCity(eq("CITY")))
+                .thenReturn(Optional.of(new CommunityEmailDTO()));
+
+        mockMvc.perform(get("/communityEmail")
+                        .param("city", "City"))
+                .andExpect(status().isOk());
+
+        verify(personService).getCommunityEmailByCity("CITY");
+    }
+
+    @Test
+    void getCommunityEmailWhenNotFoundShouldReturnNotFound() throws Exception {
+        when(personService.getCommunityEmailByCity(eq("UNKNOWN CITY")))
+                .thenReturn(Optional.empty());
+
+        mockMvc.perform(get("/communityEmail")
+                        .param("city", "Unknown City"))
+                .andExpect(status().isNotFound());
+
+        verify(personService).getCommunityEmailByCity("UNKNOWN CITY");
+    }
+
 
     // --- Tests pour POST /person ---
     @Test

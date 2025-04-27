@@ -1,7 +1,6 @@
-package com.openclassroom.safetynet;
+package com.openclassroom.safetynet.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.openclassroom.safetynet.controller.MedicalRecordController;
 import com.openclassroom.safetynet.model.MedicalRecord;
 import com.openclassroom.safetynet.service.MedicalRecordService;
 import org.junit.jupiter.api.BeforeEach;

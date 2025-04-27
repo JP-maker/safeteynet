@@ -1,7 +1,6 @@
-package com.openclassroom.safetynet;
+package com.openclassroom.safetynet.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.openclassroom.safetynet.controller.FireStationController;
 import com.openclassroom.safetynet.dto.*;
 import com.openclassroom.safetynet.model.FireStation;
 import com.openclassroom.safetynet.service.FireStationService;
@@ -207,15 +206,12 @@ public class FireStationControllerTest {
         ListOfAddressWithListOfPersonWithMedicalRecordDTO expectedFloodDTO = new ListOfAddressWithListOfPersonWithMedicalRecordDTO();
         expectedFloodDTO.setFireStationAddressPersonMedicalRecords(List.of(station1Data, station2Data));
 
-        // 4. Configurer le mock du service
-        ListOfAddressWithListOfPersonWithMedicalRecordDTO serviceResultDTO = new ListOfAddressWithListOfPersonWithMedicalRecordDTO();
-
         when(fireStationService.getListOfPersonsWithMedicalRecordsByListOfFireStation(eq(requestedStations)))
-                .thenReturn(Optional.of(serviceResultDTO));
+                .thenReturn(Optional.of(expectedFloodDTO));
 
         // --- Act & Assert ---
         mockMvc.perform(get("/flood/stations")
-                        .param("stations", "1", "2") // Paramètre de la requête
+                        .param("stations", "1","2") // Paramètre de la requête
                         .accept(MediaType.APPLICATION_JSON))
                 // Vérifier le statut et le type de contenu
                 .andExpect(status().isOk())

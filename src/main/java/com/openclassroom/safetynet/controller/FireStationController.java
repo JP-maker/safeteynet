@@ -94,9 +94,9 @@ public class FireStationController {
 
     /**
      * Endpoint pour retourner une liste de tous les foyers desservis par la caserne
-     * URL: GET /flood/stations?stations=<a list of station_numbers>
+     * URL : GET /flood/stations?stations=<a list of station_numbers>
      *
-     * @param stations Une liste de numéro de station de pompier.
+     * @param fireStationsNumber Une liste de numéro de station de pompier.
      * @return ResponseEntity contenant le DTO floodDTO ou une réponse 404.
      */
     @GetMapping("/flood/stations")
@@ -133,8 +133,16 @@ public class FireStationController {
 
     /**
      * Endpoint pour ajouter un nouveau mapping caserne/adresse.
-     * POST /firestation
-     * Corps: {"address": "...", "station": "..."}
+     * URL : POST /firestation
+     * Corps : {"address": "...", "station": "..."}
+     * @param fireStation Le mapping à ajouter.
+     *                    Le corps de la requête doit contenir l'adresse et le numéro de la station.
+     *                    Exemple : {"address": "123 Main St", "station": "1"}
+     *                    Le numéro de la station doit être un entier positif.
+     *                    L'adresse doit être une chaîne non vide.
+     *                    Si l'adresse existe déjà, renvoyer un code 409 (conflit).
+     *                    Si les données sont invalides, renvoyer un code 400 (mauvaise requête).
+     * @return FireStation
      */
     @PostMapping("/firestation")
     public ResponseEntity<FireStation> addFireStation(@RequestBody FireStation fireStation) {
@@ -160,7 +168,15 @@ public class FireStationController {
     /**
      * Endpoint pour mettre à jour le numéro de station d'un mapping existant.
      * PUT /firestation
-     * Corps: {"address": "...", "station": "..."} (l'adresse identifie le mapping à maj)
+     * Corps : {"address": "...", "station": "..."} (l'adresse identifie le mapping à maj)
+     * @param fireStation Le mapping à mettre à jour.
+     *                    Le corps de la requête doit contenir l'adresse et le nouveau numéro de la station.
+     *                    Exemple : {"address": "123 Main St", "station": "2"}
+     *                    Le numéro de la station doit être un entier positif.
+     *                    L'adresse doit être une chaîne non vide.
+     *                    Si l'adresse n'existe pas, renvoyer un code 404 (non trouvé).
+     *                    Si les données sont invalides, renvoyer un code 400 (mauvaise requête).
+     * @return FireStation
      */
     @PutMapping("/firestation")
     public ResponseEntity<FireStation> updateFireStation(@RequestBody FireStation fireStation) {
@@ -188,6 +204,13 @@ public class FireStationController {
     /**
      * Endpoint pour supprimer un mapping caserne/adresse.
      * DELETE /firestation?address=<adresse_a_supprimer>
+     * @param address L'adresse à supprimer.
+     *                L'adresse doit être une chaîne non vide.
+     *                Si l'adresse n'existe pas, renvoyer un code 404 (non trouvé).
+     *                Si l'adresse est invalide, renvoyer un code 400 (mauvaise requête).
+     *                Le corps de la requête doit contenir l'adresse à supprimer.
+     *                Exemple : /firestation?address=123 Main St
+     * @return ResponseEntity<Void>
      */
     @DeleteMapping("/firestation")
     public ResponseEntity<Void> deleteFireStation(@RequestParam String address) {
@@ -210,6 +233,7 @@ public class FireStationController {
     /**
      * Endpoint pour récupérer tous les mappings caserne/adresse.
      * GET /firestation
+     * @return ResponseEntity contenant la liste de tous les mappings.
      */
     @GetMapping("/firestation/all")
     public ResponseEntity<List<FireStation>> getAllFireStations() {

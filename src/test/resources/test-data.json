@@ -1,0 +1,30 @@
+{
+  "persons" : [ {
+    "firstName" : null,
+    "lastName" : null,
+    "address" : null,
+    "city" : null,
+    "zip" : null,
+    "phone" : null,
+    "email" : null
+  }, {
+    "firstName" : null,
+    "lastName" : null,
+    "address" : null,
+    "city" : null,
+    "zip" : null,
+    "phone" : null,
+    "email" : null
+  } ],
+  "firestations" : [ {
+    "address" : null,
+    "station" : null
+  } ],
+  "medicalrecords" : [ {
+    "firstName" : null,
+    "lastName" : null,
+    "birthdate" : null,
+    "medications" : null,
+    "allergies" : null
+  } ]
+}
